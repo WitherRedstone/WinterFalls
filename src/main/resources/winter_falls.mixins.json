@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "package": "com.chinaex123.winter_falls.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "client.DimensionSpecialEffectsMixin",
+    "client.LevelRendererMixin",
+    "BiomeMixin",
+    "ServerLevelMixin",
+    "LevelMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

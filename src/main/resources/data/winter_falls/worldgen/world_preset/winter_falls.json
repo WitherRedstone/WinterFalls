@@ -1,0 +1,36 @@
+{
+  "dimensions": {
+    "minecraft:overworld": {
+      "generator": {
+        "type": "winter_falls:winter_falls",
+        "settings": "minecraft:overworld",
+        "biome_source": {
+          "type": "minecraft:multi_noise",
+          "preset": "minecraft:overworld"
+        }
+      },
+      "type": "minecraft:overworld"
+    },
+    "minecraft:the_nether": {
+      "generator": {
+        "type": "minecraft:noise",
+        "settings": "minecraft:nether",
+        "biome_source": {
+          "type": "minecraft:multi_noise",
+          "preset": "minecraft:nether"
+        }
+      },
+      "type": "minecraft:the_nether"
+    },
+    "minecraft:the_end": {
+      "generator": {
+        "type": "minecraft:noise",
+        "settings": "minecraft:end",
+        "biome_source": {
+          "type": "minecraft:the_end"
+        }
+      },
+      "type": "minecraft:the_end"
+    }
+  }
+}
