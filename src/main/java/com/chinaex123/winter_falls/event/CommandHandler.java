@@ -1,7 +1,6 @@
 package com.chinaex123.winter_falls.event;
 
 import com.chinaex123.winter_falls.util.WinterFallsWorld;
-import com.chinaex123.winter_falls.util.WorldSavedData;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
