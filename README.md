@@ -25,11 +25,6 @@ When creating a new save, choose **Winter Falls** from the world type dropdown.
 - Custom Snow Rendering — Replaces vanilla snow with denser, more atmospheric snow particles
 - Pale Winter Sky — Removes sunrise and sunset colors for a muted winter sky
 
-## Limitations
-
-- Only affects the Overworld. The Nether, End, and modded dimensions are untouched
-- Snow does not accumulate on ice
-
 ## Configuration
 
 Accessible via Mod Menu:
@@ -59,11 +54,6 @@ Accessible via Mod Menu:
 - 冬日浓雾 — 夜晚和雪天有浓浓的冬日雾气
 - 自定义雪花 — 替换原版雪花渲染，更密集更有冬天感
 - 灰白天空 — 去除日出日落色彩，天空呈冬日灰白
-
-## 限制
-
-- 仅影响主世界，下界 / 末地 / 其他模组维度不会下雪或积雪
-- 冰块上不会积雪
 
 ## 配置
 

@@ -26,8 +26,8 @@ public class SnowAccumulationHandler {
     private static int cachedMaxSnowLayers = -1;
     /** 缓存的检查间隔（刻），-1 表示尚未从配置读取 */
     private static int cachedCheckInterval = -1;
-    /** 缓存的累积概率倒数，-1 表示尚未从配置读取 */
-    private static int cachedAccumulationChance = -1;
+    /** 缓存的累积概率，-1 表示尚未从配置读取 */
+    private static double cachedAccumulationChance = -1;
 
     /**
      * 为区块铺设额外积雪。
@@ -60,11 +60,8 @@ public class SnowAccumulationHandler {
 
         // 频率控制：每 INTERVAL tick 才检查一次
         if (tickCounter % cachedCheckInterval != 0) return;
-        // 概率控制：每次 1/CHANCE 才真的执行
-        if (level.random.nextInt(cachedAccumulationChance) != 0) return;
-
-        // 只有在下雨/雷暴时才冻冰+放雪
-        if (!level.isRaining() && !level.isThundering()) return;
+        // 概率控制：每次有 cachedAccumulationChance 的概率真的执行
+        if (level.random.nextDouble() >= cachedAccumulationChance) return;
 
         // 随机选一个位置尝试放雪
         int blockX = chunk.getPos().getMinBlockX() + level.random.nextInt(16);

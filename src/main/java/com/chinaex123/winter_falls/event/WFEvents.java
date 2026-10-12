@@ -39,8 +39,9 @@ public class WFEvents {
     /**
      * 处理世界刻事件。
      * <p>
-     * 仅对服务端的冬季世界生效，每隔 100 刻检查一次，
-     * 若当前未降雨则重新设置永久雪天天气。
+     * 仅对服务端的冬季世界生效，每隔 100 刻检查一次天气参数，
+     * 若当前天气参数异常（duration ≤ 0 或 raining 被意外关闭），
+     * 则重新设置永久雪天天气。
      *
      * @param event 世界刻事件
      */
@@ -50,7 +51,7 @@ public class WFEvents {
         if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
 
         if (level.getGameTime() % 100 == 0) {
-            if (!level.isRaining()) {
+            if (!level.getLevelData().isRaining()) {
                 setEternalSnowWeather(level);
             }
         }

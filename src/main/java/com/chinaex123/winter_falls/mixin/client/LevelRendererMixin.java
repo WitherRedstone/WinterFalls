@@ -3,6 +3,7 @@ package com.chinaex123.winter_falls.mixin.client;
 import com.chinaex123.winter_falls.util.WinterFallsWorld;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
@@ -58,6 +59,22 @@ public abstract class LevelRendererMixin {
     @Shadow
     @Final
     private float[] rainSizeZ;
+
+    /**
+     * 在降雨粒子与音效刻逻辑的头部注入，冬季世界时取消原逻辑。
+     * <p>
+     * 冬季世界使用自定义的雪花渲染与音效，
+     * 因此在此取消原版的雨滴粒子与降雨音效。
+     *
+     * @param camera 相机
+     * @param ci     回调信息，用于取消原方法执行
+     */
+    @Inject(method = "tickRain", at = @At("HEAD"), cancellable = true)
+    private void winterfalls$noRainParticlesAndSound(Camera camera, CallbackInfo ci) {
+        if (WinterFallsWorld.isWinterFallsWorld(this.minecraft.level)) {
+            ci.cancel();
+        }
+    }
 
     /**
      * 在雨雪渲染头部注入，冬季世界时以简化雪花渲染替代原逻辑。

@@ -9,7 +9,7 @@ public class WFConfig {
     public static ModConfigSpec.BooleanValue OVERRIDE_PRECIPITATION;
     public static ModConfigSpec.IntValue MAX_SNOW_LAYERS;
     public static ModConfigSpec.IntValue SNOW_CHECK_INTERVAL;
-    public static ModConfigSpec.IntValue SNOW_ACCUMULATION_CHANCE;
+    public static ModConfigSpec.DoubleValue SNOW_ACCUMULATION_CHANCE;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -30,11 +30,11 @@ public class WFConfig {
         SNOW_CHECK_INTERVAL = builder
                 .comment("积雪检查间隔（tick）")
                 .comment("Snow accumulation check interval (tick)")
-                .defineInRange("snowCheckInterval", 20, 1, 200);
+                .defineInRange("snowCheckInterval", 20, 1, Integer.MAX_VALUE);
         SNOW_ACCUMULATION_CHANCE = builder
-                .comment("积雪概率（1/N）")
-                .comment("Probability of snow accumulation (1/N)")
-                .defineInRange("snowAccumulationChance", 16, 1, 100);
+                .comment("积雪概率（%）")
+                .comment("Probability of snow accumulation (%)")
+                .defineInRange("snowAccumulationChance", 0.0625, 0.0, 1.0);
 
         builder.pop();
 

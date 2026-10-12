@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin {
 
-    /** 本 Mixin 维护的刻计数器，用于积雪频率控制 */
+    /** 维护的刻计数器，用于积雪频率控制 */
     @Unique
     private int winterfalls$tickCounter = 0;
 

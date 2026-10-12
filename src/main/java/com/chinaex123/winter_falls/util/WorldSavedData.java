@@ -7,7 +7,6 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -171,6 +170,7 @@ public class WorldSavedData extends SavedData {
             if (!data.hasInitialized()) {
                 action.run();
                 data.setInitialized(true);
+                data.setWinterWorldEnabled(true);
             }
         }
     }
