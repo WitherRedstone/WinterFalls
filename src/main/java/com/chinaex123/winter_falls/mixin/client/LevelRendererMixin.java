@@ -54,6 +54,20 @@ public abstract class LevelRendererMixin {
     @Final
     private float[] rainSizeZ;
 
+    /**
+     * 拦截降雨音效播放。
+     * <p>
+     * 在冬季世界中屏蔽原版降雨音效（WEATHER_RAIN 与 WEATHER_RAIN_ABOVE），
+     * 避免冬季世界播放不合时宜的雨声。
+     *
+     * @param level         客户端世界
+     * @param pos           音效播放位置
+     * @param sound         音效事件
+     * @param source        音效来源
+     * @param volume        音量
+     * @param pitch         音调
+     * @param distanceDelay 是否启用距离延迟
+     */
     @Redirect(
             method = "tickRain",
             at = @At(

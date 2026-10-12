@@ -7,10 +7,7 @@ import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.GrassColor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeSpecialEffects;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -18,21 +15,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * 生物群系 Mixin。
  * <p>
- * 在冬季世界中强制覆盖降水、温度与颜色逻辑，
- * 使所有生物群系都能下雪、积雪、结冰并呈现冷色调。
- * <p>
- * 所有注入均使用 {@link WinterFallsWorld#isWinterWorldActive()} 这一
- * 内存标记进行判断，避免在渲染与游戏刻热路径中触发存档查询与网络发包。
+ * 在冬季世界中强制覆盖降水、温度与植被颜色逻辑，
+ * 使所有生物群系都表现为寒冷雪原环境，
+ * 避免重进存档后恢复为原版数值。
  */
 @Mixin(Biome.class)
 public class BiomeMixin {
 
-    @Shadow
-    @Final
-    private BiomeSpecialEffects specialEffects;
-
     /**
-     * 强制生物群系拥有降水，使沙漠等原版无降水的群系也能进入雨雪渲染分支。
+     * 强制生物群系拥有降水。
+     * <p>
+     * 当冬季世界处于激活状态时，无论原版生物群系是否拥有降水，均返回 true。
      *
      * @param cir 回调信息
      */
@@ -44,7 +37,10 @@ public class BiomeMixin {
     }
 
     /**
-     * 强制降水类型为 SNOW，使原版雨雪渲染绘制雪片。
+     * 强制指定位置的降水类型为雪。
+     * <p>
+     * 当冬季世界处于激活状态时，将降水类型固定为 SNOW，
+     * 避免出现降雨。
      *
      * @param pos 方块位置
      * @param cir 回调信息
@@ -57,7 +53,10 @@ public class BiomeMixin {
     }
 
     /**
-     * 强制基础温度为寒冷值，使所有生物群系被视为寒冷群系。
+     * 强制生物群系基础温度为寒冷值。
+     * <p>
+     * 当冬季世界处于激活状态时，将基础温度固定为 0.0F，
+     * 避免重进存档后温度恢复为原版数值。
      *
      * @param cir 回调信息
      */
@@ -69,11 +68,10 @@ public class BiomeMixin {
     }
 
     /**
-     * 强制 {@code warmEnoughToRain} 返回 false。
+     * 强制生物群系寒冷到无法降雨。
      * <p>
-     * 该值被 {@code coldEnoughToSnow}、{@code shouldFreeze} 等方法使用，
-     * 覆盖后即可让水面结冰、积雪等逻辑按寒冷群系运行，
-     * 同时保留原版的光照与边缘判断。
+     * 当冬季世界处于激活状态时，返回 false 表示温度不足以降雨，
+     * 从而配合温度逻辑使降水表现为雪。
      *
      * @param pos 方块位置
      * @param cir 回调信息
@@ -88,7 +86,8 @@ public class BiomeMixin {
     /**
      * 强制生物群系允许降雪。
      * <p>
-     * 仅当配置开启降水覆盖且当前为冬季世界时生效。
+     * 当配置开启降水覆盖且冬季世界处于激活状态时，
+     * 无论原版生物群系是否允许下雪，均返回 true。
      *
      * @param level 世界读取器
      * @param pos   方块位置
@@ -102,7 +101,14 @@ public class BiomeMixin {
     }
 
     /**
-     * 覆盖草方块颜色为雪原色。
+     * 覆盖草方块颜色为寒冷色调。
+     * <p>
+     * 当冬季世界处于激活状态时，使用冷色温参数获取草方块颜色，
+     * 使植被呈现冬季灰绿色。
+     *
+     * @param posX 方块 X 坐标
+     * @param posZ 方块 Z 坐标
+     * @param cir  回调信息
      */
     @Inject(method = "getGrassColor", at = @At("HEAD"), cancellable = true)
     private void winterfalls$coldGrass(double posX, double posZ, CallbackInfoReturnable<Integer> cir) {
@@ -112,7 +118,12 @@ public class BiomeMixin {
     }
 
     /**
-     * 覆盖树叶颜色为雪原色。
+     * 覆盖树叶颜色为寒冷色调。
+     * <p>
+     * 当冬季世界处于激活状态时，使用冷色温参数获取树叶颜色，
+     * 使植被呈现冬季灰绿色。
+     *
+     * @param cir 回调信息
      */
     @Inject(method = "getFoliageColor", at = @At("HEAD"), cancellable = true)
     private void winterfalls$coldFoliage(CallbackInfoReturnable<Integer> cir) {

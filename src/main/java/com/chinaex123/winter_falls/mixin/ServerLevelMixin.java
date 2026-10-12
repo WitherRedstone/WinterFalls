@@ -30,12 +30,12 @@ public abstract class ServerLevelMixin {
      * <p>
      * 仅对冬季世界生效，将当前刻计数器一并传入积雪处理器。
      *
-     * @param chunk     目标区块
-     * @param tickSpeed 刻速度
-     * @param ci        回调信息
+     * @param chunk             目标区块
+     * @param randomTickSpeed   随机刻速度
+     * @param ci                回调信息
      */
     @Inject(method = "tickChunk", at = @At(value = "RETURN"))
-    private void onTickChunk(LevelChunk chunk, int tickSpeed, CallbackInfo ci) {
+    private void onTickChunk(LevelChunk chunk, int randomTickSpeed, CallbackInfo ci) {
         ServerLevel level = (ServerLevel) (Object) this;
         if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
         SnowAccumulationHandler.placeExtraSnow(level, chunk, winterfalls$tickCounter);
