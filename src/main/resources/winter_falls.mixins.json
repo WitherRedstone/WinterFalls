@@ -7,8 +7,10 @@
     "client.DimensionSpecialEffectsMixin",
     "client.LevelRendererMixin",
     "BiomeMixin",
+    "LevelMixin",
     "ServerLevelMixin",
-    "LevelMixin"
+    "SnowAndFreezeFeatureMixin",
+    "SnowGolemMixin"
   ],
   "client": [],
   "injectors": {

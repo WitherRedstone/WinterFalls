@@ -14,40 +14,38 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 服务端世界 Mixin。
  * <p>
- * 在冬季世界中接管降水与积雪逻辑：
- * 屏蔽原版降水刻逻辑，改为在区块刻完成后交由积雪处理器按配置铺雪，
- * 并自行维护一个刻计数器供积雪频率控制使用。
+ * 在冬季世界中接管原版降水 tick 逻辑，
+ * 改用自定义的积雪累积处理，并维护全局 tick 计数供其使用。
  */
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin {
 
-    /** 维护的刻计数器，用于积雪频率控制 */
+    /**
+     * 世界 tick 计数器。
+     * <p>
+     * 每个服务端 tick 自增一次，用于驱动自定义积雪累积逻辑。
+     */
     @Unique
     private int winterfalls$tickCounter = 0;
 
     /**
-     * 在区块刻完成后注入，尝试为区块铺设额外积雪。
-     * <p>
-     * 仅对冬季世界生效，将当前刻计数器一并传入积雪处理器。
+     * 在世界 tick 开始时递增计数器。
      *
-     * @param chunk             目标区块
-     * @param randomTickSpeed   随机刻速度
-     * @param ci                回调信息
+     * @param ci 回调信息
      */
-    @Inject(method = "tickChunk", at = @At(value = "RETURN"))
-    private void onTickChunk(LevelChunk chunk, int randomTickSpeed, CallbackInfo ci) {
-        ServerLevel level = (ServerLevel) (Object) this;
-        if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
-        SnowAccumulationHandler.placeExtraSnow(level, chunk, winterfalls$tickCounter);
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void onTickStart(CallbackInfo ci) {
+        winterfalls$tickCounter++;
     }
 
     /**
-     * 在降水刻头部注入，冬季世界时取消原逻辑。
+     * 拦截原版降水 tick。
      * <p>
-     * 原版降水逻辑由自定义积雪逻辑替代，仅在冬季世界中取消。
+     * 在冬季世界中取消原版的降水处理，
+     * 避免与原版降雪逻辑冲突，交由自定义积雪逻辑接管。
      *
      * @param pos 方块位置
-     * @param ci  回调信息，用于取消原方法执行
+     * @param ci  回调信息
      */
     @Inject(method = "tickPrecipitation", at = @At("HEAD"), cancellable = true)
     private void onTickPrecipitation(BlockPos pos, CallbackInfo ci) {
@@ -58,12 +56,19 @@ public abstract class ServerLevelMixin {
     }
 
     /**
-     * 在世界刻头部注入，自增刻计数器。
+     * 在区块 tick 结束后补充积雪。
+     * <p>
+     * 当冬季世界处于激活状态时，调用自定义积雪处理，
+     * 根据全局 tick 计数为当前区块放置额外的积雪。
      *
-     * @param ci 回调信息
+     * @param chunk           当前区块
+     * @param randomTickSpeed 随机 tick 速率
+     * @param ci              回调信息
      */
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void onTickStart(CallbackInfo ci) {
-        winterfalls$tickCounter++;
+    @Inject(method = "tickChunk", at = @At("RETURN"))
+    private void onTickChunk(LevelChunk chunk, int randomTickSpeed, CallbackInfo ci) {
+        ServerLevel level = (ServerLevel) (Object) this;
+        if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
+        SnowAccumulationHandler.placeExtraSnow(level, chunk, winterfalls$tickCounter);
     }
 }

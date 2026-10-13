@@ -11,21 +11,19 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
- * 模组事件处理器。
+ * 冬季世界事件处理器。
  * <p>
- * 负责在冬季世界加载时设置永久雪天，并在世界刻中持续维持该天气；
- * 世界卸载时重置相关状态。通过事件订阅自动注册到游戏事件总线。
+ * 监听世界加载、刻更新与卸载事件，
+ * 为服务端的冬季世界维持永久雪天天气，并在卸载时重置状态。
  */
 @EventBusSubscriber
 public class WFEvents {
 
-    /** 天气是否已设置过，用于避免重复设置 */
-    private static boolean weatherSet = false;
-
     /**
      * 处理世界加载事件。
      * <p>
-     * 仅对服务端的冬季世界生效，且仅在新建世界时设置永久雪天天气。
+     * 仅对服务端的冬季世界生效，且仅在新建世界时执行，
+     * 初始化永久雪天天气。
      *
      * @param event 世界加载事件
      */
@@ -68,15 +66,14 @@ public class WFEvents {
     public static void onLevelUnload(LevelEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level && WinterFallsWorld.isWinterFallsWorld(level)) {
             WinterFallsWorld.reset();
-            weatherSet = false;
         }
     }
 
     /**
      * 设置永久雪天天气。
      * <p>
-     * 将天气设为永不结束的降雨（雪），并在配置启用时关闭原版天气循环，
-     * 最后标记天气已设置。
+     * 将天气参数固定为降雨（表现为雪）、无雷暴且持续时间为最大值，
+     * 并在配置开启时关闭原版的天气循环规则。
      *
      * @param level 服务端世界
      */
@@ -85,6 +82,5 @@ public class WFEvents {
         if (WFConfig.DISABLE_WEATHER_CYCLE.get()) {
             level.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, level.getServer());
         }
-        weatherSet = true;
     }
 }

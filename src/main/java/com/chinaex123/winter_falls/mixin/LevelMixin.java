@@ -12,23 +12,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * 世界 Mixin。
  * <p>
- * 在冬季世界中覆盖与降水、日月显示相关的判断：
- * 固定降雨强度以配合永久雪天，
- * 并覆盖指定位置是否降雨的判断。
+ * 在冬季世界中强制覆盖降雨渲染强度与降雨判定逻辑，
+ * 使客户端始终渲染满强度的降雪，并让露天位置一律判定为降雨。
  */
 @Mixin(Level.class)
 public class LevelMixin {
 
     /**
-     * 在获取降雨强度的头部注入，冬季世界时固定返回满强度。
+     * 强制降雨渲染强度为满值。
      * <p>
-     * 通过固定降雨强度，间接隐藏日月显示效果。
+     * 在冬季世界中固定返回 1.0F，
+     * 确保客户端始终以最大强度渲染降雪效果。
      *
      * @param delta 部分 tick 插值
-     * @param cir   回调信息，用于设置返回值
+     * @param cir   回调信息
      */
     @Inject(method = "getRainLevel", at = @At("HEAD"), cancellable = true)
-    private void winterfalls$hideSunMoon(float delta, CallbackInfoReturnable<Float> cir) {
+    private void winterfalls$forceRenderSnowEntry(float delta, CallbackInfoReturnable<Float> cir) {
         Level level = (Level) (Object) this;
         if (WinterFallsWorld.isWinterFallsWorld(level)) {
             cir.setReturnValue(1.0F);
@@ -36,22 +36,18 @@ public class LevelMixin {
     }
 
     /**
-     * 在判断指定位置是否降雨的头部注入。
+     * 强制露天位置判定为降雨。
      * <p>
-     * 仅对冬季世界生效：若该位置可露天则强制返回 true，
-     * 否则返回 false；非冬季世界时放行原逻辑。
+     * 在冬季世界中，只要该位置能看到天空，
+     * 就返回 true 表示此处正在降水。
      *
      * @param pos 方块位置
-     * @param cir 回调信息，用于设置返回值
+     * @param cir 回调信息
      */
     @Inject(method = "isRainingAt", at = @At("HEAD"), cancellable = true)
-    private void forceRainingAt(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+    private void winterfalls$forceSnowAtOpenSky(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         Level level = (Level) (Object) this;
         if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
-        if (!level.canSeeSky(pos)) {
-            cir.setReturnValue(false);
-            return;
-        }
-        cir.setReturnValue(true);
+        cir.setReturnValue(level.canSeeSky(pos));
     }
 }

@@ -131,4 +131,5 @@ public class BiomeMixin {
             cir.setReturnValue(FoliageColor.get(0.0, 0.5));
         }
     }
+
 }

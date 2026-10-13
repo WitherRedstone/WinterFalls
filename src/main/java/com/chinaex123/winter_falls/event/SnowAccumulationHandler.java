@@ -6,7 +6,6 @@ import com.chinaex123.winter_falls.util.WorldSavedData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -16,29 +15,68 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * 积雪累积处理器。
  * <p>
- * 在冬季世界中负责为区块铺设额外积雪：
- * 首次加载区块时进行一次性全量覆盖，并在后续刻中按间隔与概率
- * 随机选取位置尝试结冰或增加雪层厚度。
+ * 负责冬季世界中的自定义积雪逻辑：
+ * 新区块首次处理时铺设积雪与结冰，之后按配置的间隔与概率
+ * 逐步增加已有积雪的层数，并缓存配置数值避免重复读取。
  */
 public class SnowAccumulationHandler {
 
-    /** 缓存的雪层上限，-1 表示尚未从配置读取 */
+    /** 缓存的最大积雪层数 */
     private static int cachedMaxSnowLayers = -1;
-    /** 缓存的检查间隔（刻），-1 表示尚未从配置读取 */
+
+    /** 缓存的检查间隔（刻） */
     private static int cachedCheckInterval = -1;
-    /** 缓存的累积概率，-1 表示尚未从配置读取 */
+
+    /** 缓存的积雪累积概率 */
     private static double cachedAccumulationChance = -1;
 
     /**
-     * 为区块铺设额外积雪。
+     * 按需刷新配置缓存。
      * <p>
-     * 仅在冬季世界生效：首次处理该区块时执行全量积雪并标记为已处理，
-     * 之后按配置的检查间隔与概率，随机选取一个位置尝试结冰或增加雪层。
-     * 仅在降雨或雷暴天气、可露天且光照满足条件时才会实际放置。
+     * 仅在缓存未初始化时读取一次配置，
+     * 避免每次调用都重复读取配置值。
+     */
+    private static void refreshConfigIfNeeded() {
+        if (cachedCheckInterval == -1) {
+            cachedCheckInterval = WFConfig.SNOW_CHECK_INTERVAL.get();
+            cachedAccumulationChance = WFConfig.SNOW_ACCUMULATION_CHANCE.get();
+            cachedMaxSnowLayers = WFConfig.MAX_SNOW_LAYERS.get();
+        }
+    }
+
+    /**
+     * 重置配置缓存。
+     * <p>
+     * 将缓存值全部恢复为未初始化状态，下次使用时重新读取配置。
+     */
+    public static void reset() {
+        cachedMaxSnowLayers = -1;
+        cachedCheckInterval = -1;
+        cachedAccumulationChance = -1;
+    }
+
+    /**
+     * 判断方块是否属于冰类方块。
+     *
+     * @param state 方块状态
+     * @return 若为冰、浮冰、蓝冰或霜冰则返回 true
+     */
+    private static boolean isIceClass(BlockState state) {
+        return state.getBlock() == Blocks.ICE
+                || state.getBlock() == Blocks.PACKED_ICE
+                || state.getBlock() == Blocks.BLUE_ICE
+                || state.getBlock() == Blocks.FROSTED_ICE;
+    }
+
+    /**
+     * 为区块放置额外积雪。
+     * <p>
+     * 仅对冬季世界生效。区块首次处理时铺设积雪与结冰并标记为已处理，
+     * 之后按配置的检查间隔与累积概率，随机选取一列尝试增加积雪层数。
      *
      * @param level       服务端世界
      * @param chunk       目标区块
-     * @param tickCounter 当前刻计数
+     * @param tickCounter 全局 tick 计数
      */
     public static void placeExtraSnow(ServerLevel level, ChunkAccess chunk, int tickCounter) {
         if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
@@ -46,81 +84,37 @@ public class SnowAccumulationHandler {
         long key = chunk.getPos().toLong();
         WorldSavedData savedData = WorldSavedData.get(level);
 
-        // 持久化到存档防止重进世界重复铺雪（已有雪不动，幂等）
         if (!savedData.isChunkProcessed(key)) {
-            accumulateSnowOnChunk(level, chunk);
+            placeSnowAndFreeze(level, chunk);
             savedData.markChunkProcessed(key);
         }
 
-        if (cachedCheckInterval == -1) {
-            cachedCheckInterval = WFConfig.SNOW_CHECK_INTERVAL.get();
-            cachedAccumulationChance = WFConfig.SNOW_ACCUMULATION_CHANCE.get();
-            cachedMaxSnowLayers = WFConfig.MAX_SNOW_LAYERS.get();
-        }
+        refreshConfigIfNeeded();
 
-        // 频率控制：每 INTERVAL tick 才检查一次
         if (tickCounter % cachedCheckInterval != 0) return;
-        // 概率控制：每次有 cachedAccumulationChance 的概率真的执行
         if (level.random.nextDouble() >= cachedAccumulationChance) return;
 
-        // 随机选一个位置尝试放雪
-        int blockX = chunk.getPos().getMinBlockX() + level.random.nextInt(16);
-        int blockZ = chunk.getPos().getMinBlockZ() + level.random.nextInt(16);
-        BlockPos pos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(blockX, 0, blockZ));
+        int minX = chunk.getPos().getMinBlockX();
+        int minZ = chunk.getPos().getMinBlockZ();
+        int blockX = minX + level.random.nextInt(16);
+        int blockZ = minZ + level.random.nextInt(16);
+        BlockPos pos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING,
+                new BlockPos(blockX, 0, blockZ));
 
-        if (pos.getY() <= level.getMinBuildHeight()) return;
-        if (!level.canSeeSky(pos)) return;
-
-        BlockState state = level.getBlockState(pos);
-        BlockPos belowPos = pos.below();
-        BlockState belowState = level.getBlockState(belowPos);
-
-        // 水面或水面下方结冰
-        if (state.getBlock() == Blocks.WATER) {
-            level.setBlockAndUpdate(pos, Blocks.ICE.defaultBlockState());
-            return;
-        }
-        if (belowState.getBlock() == Blocks.WATER) {
-            level.setBlockAndUpdate(belowPos, Blocks.ICE.defaultBlockState());
-            return;
-        }
-
-        boolean alreadySnow = state.getBlock() == Blocks.SNOW;
-        if (!alreadySnow) {
-            if (!belowState.isSolid() || belowState.is(BlockTags.ICE)) return;
-            if (!state.canBeReplaced()) return;
-        }
-        if (level.getBrightness(LightLayer.BLOCK, pos) >= 10) return;
-
-        // 已有雪则增加层数，否则放置一层雪
-        if (alreadySnow) {
-            int currentLayers = state.getValue(BlockStateProperties.LAYERS);
-            if (currentLayers < cachedMaxSnowLayers) {
-                level.setBlockAndUpdate(pos, state.setValue(BlockStateProperties.LAYERS, currentLayers + 1));
-            }
-        } else {
-            level.setBlockAndUpdate(pos, Blocks.SNOW.defaultBlockState());
-        }
+        incrementalTickAt(level, pos);
     }
 
     /**
-     * 对区块执行一次性全量积雪覆盖。
+     * 为区块铺设积雪与结冰。
      * <p>
-     * 仅在冬季世界生效：遍历区块内全部 16×16 列，对可露天且符合条件的位置
-     * 结冰或放置一层雪，不增加已有雪层厚度。主要用于区块首次加载时的保底覆盖。
+     * 遍历区块内全部 16×16 列，按高度图定位地表方块：
+     * 水面结冰、水下方块结冰，其余可替换且下方为固体、
+     * 方块光照低于 10 的位置铺设一层雪。
      *
      * @param level 服务端世界
      * @param chunk 目标区块
      */
-    public static void accumulateSnowOnChunk(ServerLevel level, ChunkAccess chunk) {
-        if (!WinterFallsWorld.isWinterFallsWorld(level)) return;
-
-        if (cachedMaxSnowLayers == -1) {
-            cachedCheckInterval = WFConfig.SNOW_CHECK_INTERVAL.get();
-            cachedAccumulationChance = WFConfig.SNOW_ACCUMULATION_CHANCE.get();
-            cachedMaxSnowLayers = WFConfig.MAX_SNOW_LAYERS.get();
-        }
-
+    private static void placeSnowAndFreeze(ServerLevel level, ChunkAccess chunk) {
         int minX = chunk.getPos().getMinBlockX();
         int minZ = chunk.getPos().getMinBlockZ();
 
@@ -128,36 +122,60 @@ public class SnowAccumulationHandler {
             for (int lz = 0; lz < 16; lz++) {
                 int blockX = minX + lx;
                 int blockZ = minZ + lz;
-                BlockPos pos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(blockX, 0, blockZ));
-
-                if (pos.getY() <= level.getMinBuildHeight()) continue;
-                if (!level.canSeeSky(pos)) continue;
+                BlockPos pos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING,
+                        new BlockPos(blockX, 0, blockZ));
 
                 BlockState state = level.getBlockState(pos);
                 BlockPos belowPos = pos.below();
-                BlockState belowState = level.getBlockState(belowPos);
+                BlockState below = level.getBlockState(belowPos);
 
-                // 水面或水面下方结冰
                 if (state.getBlock() == Blocks.WATER) {
                     level.setBlock(pos, Blocks.ICE.defaultBlockState(), 2);
                     continue;
                 }
-                if (belowState.getBlock() == Blocks.WATER) {
+
+                if (below.getBlock() == Blocks.WATER) {
                     level.setBlock(belowPos, Blocks.ICE.defaultBlockState(), 2);
                     continue;
                 }
 
-                boolean alreadySnow = state.getBlock() == Blocks.SNOW;
-                if (!alreadySnow) {
-                    if (!belowState.isSolid() || belowState.is(BlockTags.ICE)) continue;
-                    if (!state.canBeReplaced()) continue;
-                }
-                if (level.getBrightness(LightLayer.BLOCK, pos) >= 10) continue;
+                if (isIceClass(below)) continue;
 
-                // 首次全量积雪：只做保底覆盖
-                if (!alreadySnow) {
+                if (isIceClass(state)) continue;
+
+                if (state.canBeReplaced() && below.isSolid()
+                        && level.getBrightness(LightLayer.BLOCK, pos) < 10) {
                     level.setBlock(pos, Blocks.SNOW.defaultBlockState(), 2);
                 }
+            }
+        }
+    }
+
+    /**
+     * 对单个位置执行增量积雪处理。
+     * <p>
+     * 若目标为雪且其下方为冰类方块，则移除该雪；
+     * 若目标为雪且层数未达上限、方块光照低于 10，
+     * 则将该处雪的层数增加一层。
+     *
+     * @param level 服务端世界
+     * @param pos   目标位置
+     */
+    private static void incrementalTickAt(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+
+        if (state.getBlock() == Blocks.SNOW && isIceClass(level.getBlockState(pos.below()))) {
+            level.removeBlock(pos, false);
+            return;
+        }
+
+        if (state.getBlock() == Blocks.SNOW) {
+            int layers = state.getValue(BlockStateProperties.LAYERS);
+            if (layers < cachedMaxSnowLayers
+                    && level.getBrightness(LightLayer.BLOCK, pos) < 10) {
+                level.setBlock(pos,
+                        state.setValue(BlockStateProperties.LAYERS, layers + 1),
+                        2);
             }
         }
     }
