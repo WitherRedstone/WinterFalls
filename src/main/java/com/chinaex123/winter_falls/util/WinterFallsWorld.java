@@ -96,7 +96,7 @@ public class WinterFallsWorld {
     /**
      * 冬季世界是否处于激活状态。
      * <p>
-     * 供没有世界上下文的逻辑使用（如 {@code Biome} 的各类判断）。
+     * 供没有世界上下文的逻辑使用。
      * 该读取几乎无开销，适合热路径调用。
      *
      * @return 激活返回 true

@@ -4,13 +4,11 @@ import com.chinaex123.winter_falls.Winterfalls;
 import com.chinaex123.winter_falls.config.WFConfig;
 import com.chinaex123.winter_falls.util.WinterFallsWorld;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.animal.Fox;
-import net.minecraft.world.entity.animal.PolarBear;
-import net.minecraft.world.entity.animal.Rabbit;
-import net.minecraft.world.entity.animal.SnowGolem;
+import net.minecraft.world.entity.animal.*;
 import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Stray;
 import net.minecraft.world.item.ItemStack;
@@ -135,6 +133,21 @@ public class MobSpawnHandler {
                     && spawnType != MobSpawnType.SPAWNER
                     && spawnType != MobSpawnType.DISPENSER) {
                 rabbit.setVariant(Rabbit.Variant.WHITE);
+            }
+        }
+
+        // 狼：自然生成的强制雪狼
+        if (event.getEntity() instanceof Wolf wolf) {
+            MobSpawnType spawnType = event.getSpawnType();
+            if (spawnType != MobSpawnType.TRIGGERED
+                    && spawnType != MobSpawnType.COMMAND
+                    && spawnType != MobSpawnType.SPAWNER
+                    && spawnType != MobSpawnType.DISPENSER) {
+
+                wolf.registryAccess()
+                        .registryOrThrow(Registries.WOLF_VARIANT)
+                        .getHolder(WolfVariants.SNOWY)
+                        .ifPresent(wolf::setVariant);
             }
         }
     }
