@@ -82,6 +82,9 @@ configurations {
 }
 
 dependencies {
+    //localRuntime "curse.maven:legendary-survival-overhaul-840254:8597620"
+    //localRuntime "curse.maven:ecliptic-seasons-1118306:9118253"
+
     implementation "curse.maven:jei-238222:7420587" // jei
     localRuntime "curse.maven:jade-324717:7545219" // jade
     localRuntime "curse.maven:kubejs-238086:7278501"

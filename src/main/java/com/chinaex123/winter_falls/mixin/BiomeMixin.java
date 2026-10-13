@@ -63,7 +63,7 @@ public class BiomeMixin {
     @Inject(method = "getBaseTemperature", at = @At("HEAD"), cancellable = true)
     private void winterfalls$forceColdTemperature(CallbackInfoReturnable<Float> cir) {
         if (WinterFallsWorld.isWinterWorldActive()) {
-            cir.setReturnValue(0.0F);
+            cir.setReturnValue(-0.5F);
         }
     }
 
@@ -131,5 +131,19 @@ public class BiomeMixin {
             cir.setReturnValue(FoliageColor.get(0.0, 0.5));
         }
     }
+
+//    @Inject(method = "shouldFreeze(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z", at = @At("HEAD"), cancellable = true)
+//    private void winterfalls$forceFreeze(LevelReader level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+//        if (WinterFallsWorld.isWinterWorldActive()) {
+//            cir.setReturnValue(true);
+//        }
+//    }
+//
+//    @Inject(method = "shouldMeltFrozenOceanIcebergSlightly", at = @At("HEAD"), cancellable = true)
+//    private void winterfalls$noIcebergMelt(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+//        if (WinterFallsWorld.isWinterWorldActive()) {
+//            cir.setReturnValue(false);
+//        }
+//    }
 
 }

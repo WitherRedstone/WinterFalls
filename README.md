@@ -24,7 +24,8 @@ Select the **"Winter Falls"** world type when creating a new world to enable all
   * Strays: Spawn with a chance in any biome; naturally spawned Skeletons have a chance to convert into Strays;
   * Polar Bears: Spawn with a low chance in any biome, usually as a family group (adults + cubs);
   * Foxes: Spawn with a low chance in any biome, always white Arctic foxes; low chance to spawn as a kit; adult foxes have a 15% chance to hold items in their mouth, kits have 35%;
-  * Rabbits: Naturally spawned rabbits are always white;
+  * Rabbits: Naturally spawned rabbits are always white；
+  * Wolves: Naturally spawned wolves are always white;
 
 ## Configuration
 
@@ -33,6 +34,9 @@ Select the **"Winter Falls"** world type when creating a new world to enable all
 * Snow accumulation check interval and probability
 * Maximum snow layer thickness
 * Spawn probability and count for all featured mobs
+
+## Known Issues
+* [Ecliptic Seasons]: Biome temperatures will be calculated based on the ecliptic seasons, causing snow to not fall in all biomes.
 
 ---
 
@@ -57,7 +61,7 @@ Select the **"Winter Falls"** world type when creating a new world to enable all
   * 北极熊：任何群系中北极熊都有低概率的生成，且会拖家带口的生成；
   * 狐狸：任何群系中都有低概率生成，且必定是白色极地狐；生成时有低概率是小狐狸；大狐狸有15%概率叼物品，小狐狸则有35%概率；
   * 兔子：自然生成的兔子必定是白色的；
-  * 狼：自然生成的狼必定是白色；
+  * 狼：自然生成的狼必定是白色。
 
 ## 配置
 
@@ -66,3 +70,6 @@ Select the **"Winter Falls"** world type when creating a new world to enable all
 * 积雪检查间隔与概率
 * 最大雪层厚度
 * 特色生物的生成概率和数量
+
+## 已知问题
+* [节气]：会让群系温度依照节气计算，导致不会全群系下雪
