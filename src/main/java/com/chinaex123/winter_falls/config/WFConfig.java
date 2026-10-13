@@ -67,13 +67,13 @@ public class WFConfig {
                 .comment("雪傀儡每次最多生成数量")
                 .comment("Maximum Snow Golems to spawn at once")
                 .defineInRange("snowGolemMaxCount", 1, 0, Integer.MAX_VALUE);
+        builder.pop();
+
+        builder.comment("流浪者").push("Stray");
         STRAY_SPAWN_CHANCE = builder
                 .comment("流浪者自然生成概率（%）")
                 .comment("Stray natural spawn probability (%)")
                 .defineInRange("straySpawnChance", 0.40, 0.0, 1.0);
-        builder.pop();
-
-        builder.comment("流浪者").push("Stray");
         STRAY_MIN_COUNT = builder
                 .comment("流浪者每次最少生成数量")
                 .comment("Minimum Strays to spawn at once")
